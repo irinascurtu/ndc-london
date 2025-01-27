@@ -30,7 +30,8 @@ namespace ProductsApi
 
             builder.Services.AddScoped<IProductRepository, ProductRepository>();
             builder.Services.AddScoped<IProductService, ProductService>();
-
+            builder.Services.AddDistributedMemoryCache();
+            builder.Services.AddResponseCaching();
             builder.Services.AddSingleton<IMemoryCache>(new MemoryCache(
               new MemoryCacheOptions
               {
@@ -58,7 +59,7 @@ namespace ProductsApi
                 }
             }
 
-
+            app.UseResponseCaching();
             app.UseHttpsRedirection();
 
             app.UseAuthorization();

@@ -1,11 +1,13 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using ProductsApi.Data.Entities;
 using ProductsApi.Models;
 using ProductsApi.Service;
+using System.Text.Json;
 
 namespace ProductsApi.Controllers
 {
@@ -20,17 +22,26 @@ namespace ProductsApi.Controllers
         private readonly IMemoryCache memoryCache;
         private const string LimitedStockProductsKey = "LSPC";
 
+
+        private readonly IDistributedCache distributedCache;
+        private const string OverstockedProductsKey = "OSPK";
+
         public ProductsController(IProductService productService, IMapper mapper,
-            ILogger<ProductsController> logger, IMemoryCache memoryCache)
+            ILogger<ProductsController> logger, IMemoryCache memoryCache, IDistributedCache distributedCache)
         {
             _productService = productService;
             this.mapper = mapper;
             this.logger = logger;
             this.memoryCache = memoryCache;
+            this.distributedCache = distributedCache;
         }
 
 
         [HttpGet]
+        [ResponseCache(Duration = 5, // Cache-Control: max-age=5
+          Location = ResponseCacheLocation.Any, // Cache-Control: public
+          VaryByHeader = "User-Agent" // Vary: User-Agent
+          )]
         public async Task<ActionResult<List<ProductTrimmedModel>>> GetProducts()
         {
             var productsFromDb = await _productService.GetProductsAsync();
@@ -58,8 +69,9 @@ namespace ProductsApi.Controllers
 
 
                 MemoryCacheEntryOptions cacheEntryOptions = new()
-                { //AbsoluteExpiration = DateTimeOffset.UtcNow,
-                    SlidingExpiration = TimeSpan.FromSeconds(5),
+                {
+                    AbsoluteExpiration = DateTimeOffset.UtcNow,
+                    // SlidingExpiration = TimeSpan.FromSeconds(5),
                     Size = cachedValue?.Length
                 };
 
@@ -68,6 +80,53 @@ namespace ProductsApi.Controllers
             MemoryCacheStatistics? stats = memoryCache.GetCurrentStatistics();
             logger.LogInformation($"Memory cache. Total hits: {stats?
                   .TotalHits}. Estimated size: {stats?.CurrentEstimatedSize}.");
+            return cachedValue ?? Enumerable.Empty<Product>();
+        }
+
+        private Product[]? GetOverStockedProductsFromDb()
+        {
+            // If the cached value is not found, get the value from the database.
+            var products = _productService.GetProductsAsync().Result;
+            var cachedValue = products.Where(p => p.Stock > 100)
+                .ToArray();
+
+            DistributedCacheEntryOptions cacheEntryOptions = new()
+            {
+                // Allow readers to reset the cache entry's lifetime.
+                SlidingExpiration = TimeSpan.FromSeconds(5),
+                // Set an absolute expiration time for the cache entry.
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(20)
+            };
+
+            byte[]? cachedValueBytes =
+              JsonSerializer.SerializeToUtf8Bytes(cachedValue);
+
+            distributedCache.Set(OverstockedProductsKey, cachedValueBytes, cacheEntryOptions);
+            return cachedValue;
+        }
+
+
+        [HttpGet]
+        [Route("overstocked")]
+        [Produces(typeof(Product[]))]
+        public async Task<IEnumerable<Product>> GetOverStockedProducts()
+        {
+            // Try to get the cached value.
+            byte[]? cachedValueBytes = distributedCache.Get(OverstockedProductsKey);
+            Product[]? cachedValue = null;
+            if (cachedValueBytes is null)
+            {
+                cachedValue = GetOverStockedProductsFromDb();
+            }
+            else
+            {
+                cachedValue = JsonSerializer
+                  .Deserialize<Product[]?>(cachedValueBytes);
+                if (cachedValue is null)
+                {
+                    cachedValue = GetOverStockedProductsFromDb();
+                }
+            }
             return cachedValue ?? Enumerable.Empty<Product>();
         }
 
@@ -96,7 +155,7 @@ namespace ProductsApi.Controllers
             }
 
             HttpContext.Response.Headers.Add("My-cool-header", "sdasdsada");
-           
+
             return Ok("i found the product");
         }
 
