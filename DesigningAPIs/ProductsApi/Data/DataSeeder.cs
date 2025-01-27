@@ -5,7 +5,7 @@ namespace ProductsApi.Data
 {
     public static class DataSeeder
     {
-        static string rootPath = @"{yourpath to json file here}";
+        static string rootPath = @"D:\ndc\ndc-london\DesigningAPIs\ProductsApi\";
         public static void SeedData(ProductContext _context)
         {
             if (!_context.Products.Any())
