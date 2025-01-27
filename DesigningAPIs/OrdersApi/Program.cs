@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using OrdersApi.Data;
 using OrdersApi.Data.Repositories;
+using OrdersApi.Infrastructure.Mappings;
 using OrdersApi.Service;
 using OrdersApi.Services;
 
@@ -22,7 +23,7 @@ namespace OrdersApi
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-
+            builder.Services.AddAutoMapper(typeof(OrderProfileMapping).Assembly);
             var app = builder.Build();                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
 
             // Configure the HTTP request pipeline.

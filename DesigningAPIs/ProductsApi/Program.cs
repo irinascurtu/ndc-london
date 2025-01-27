@@ -1,4 +1,5 @@
 
+using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.AspNetCore.Mvc.Versioning;
@@ -41,6 +42,29 @@ namespace ProductsApi
                 });
                 options.RejectionStatusCode = 429;
             });
+
+            builder.Services.AddApiVersioning(o =>
+            {
+                o.AssumeDefaultVersionWhenUnspecified = true;
+                o.DefaultApiVersion = new Asp.Versioning.ApiVersion(2, 0);
+                //   o.DefaultApiVersion = new ApiVersion(1, 0);
+                o.ReportApiVersions = true;
+                //  o.ApiVersionReader = new MediaTypeApiVersionReader();
+                // o.ApiVersionSelector = new CurrentImplementationApiVersionSelector(o);
+                //o.ApiVersionReader = new MediaTypeApiVersionReader("api-version");
+               
+                //.ApiVersionReader = builder.Template("application/vnd.my.company.v{version}+json")
+                //                         .Build();
+                //
+
+                o.ApiVersionReader = new MediaTypeApiVersionReaderBuilder().Template("application/vnd.example.v{api-version}+json").Build();
+            })
+                  .AddMvc().AddApiExplorer(
+                      options =>
+                      {
+                          // the default is ToString(), but we want "'v'major[.minor][-status]"
+                          options.GroupNameFormat = "'v'VVV";
+                      }); ;
 
             builder.Services.AddScoped<IProductRepository, ProductRepository>();
             builder.Services.AddScoped<IProductService, ProductService>();

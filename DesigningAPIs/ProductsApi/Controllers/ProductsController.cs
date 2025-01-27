@@ -11,7 +11,10 @@ using System.Text.Json;
 
 namespace ProductsApi.Controllers
 {
-    [Route("api/[controller]")]
+    // [Route("api/[controller]")]
+    [Route("api/products")]
+    [Asp.Versioning.ApiVersion("1")]
+    [ApiVersion("1")]
     [ApiController]
     public class ProductsController : ControllerBase
     {
@@ -38,10 +41,11 @@ namespace ProductsApi.Controllers
 
 
         [HttpGet]
-        [ResponseCache(Duration = 5, // Cache-Control: max-age=5
-          Location = ResponseCacheLocation.Any, // Cache-Control: public
-          VaryByHeader = "User-Agent" // Vary: User-Agent
-          )]
+        //[ResponseCache(Duration = 5, // Cache-Control: max-age=5
+        //  Location = ResponseCacheLocation.Any, // Cache-Control: public
+        //  VaryByHeader = "User-Agent" // Vary: User-Agent
+        //  )]
+        [Produces("application/vnd.example.v1+json")]
         public async Task<ActionResult<List<ProductTrimmedModel>>> GetProducts()
         {
             var productsFromDb = await _productService.GetProductsAsync();
