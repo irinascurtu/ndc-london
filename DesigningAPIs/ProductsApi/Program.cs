@@ -2,12 +2,14 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.AspNetCore.Mvc.Versioning;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using ProductsApi.Data;
 using ProductsApi.Data.Repositories;
 using ProductsApi.Infrastructure.Mappings;
 using ProductsApi.Service;
+using System.Threading.RateLimiting;
 
 namespace ProductsApi
 {
@@ -27,6 +29,18 @@ namespace ProductsApi
             builder.Services.AddDbContext<ProductContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+            builder.Services.AddRateLimiter(options =>
+            {
+                options
+                .AddFixedWindowLimiter(policyName: "fixed", options =>
+                {
+                    options.PermitLimit = 1;
+                    options.Window = TimeSpan.FromSeconds(30);
+                    options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    options.QueueLimit = 0;
+                });
+                options.RejectionStatusCode = 429;
+            });
 
             builder.Services.AddScoped<IProductRepository, ProductRepository>();
             builder.Services.AddScoped<IProductService, ProductService>();
@@ -59,6 +73,7 @@ namespace ProductsApi
                 }
             }
 
+            app.UseRateLimiter();
             app.UseResponseCaching();
             app.UseHttpsRedirection();
 
