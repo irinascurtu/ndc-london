@@ -1,10 +1,13 @@
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Http.Resilience;
 using OrdersApi.Data;
 using OrdersApi.Data.Repositories;
 using OrdersApi.Infrastructure.Mappings;
 using OrdersApi.Service;
+using OrdersApi.Service.Clients;
 using OrdersApi.Services;
+using Polly;
 
 namespace OrdersApi
 {
@@ -15,16 +18,36 @@ namespace OrdersApi
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
+            builder.Services.AddControllers().AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+            });
 
             builder.Services.AddControllers();
             builder.Services.AddDbContext<OrderContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
             builder.Services.AddScoped<IOrderRepository, OrderRepository>();
             builder.Services.AddScoped<IOrderService, OrderService>();
+            //builder.Services.AddHttpClient<IProductStockServiceClient, ProductStockServiceClient>();
+
+            builder.Services.AddHttpClient<IProductStockServiceClient, ProductStockServiceClient>()
+               .AddResilienceHandler("my-pipeline", builder =>
+               {
+                   // Refer to https://www.pollydocs.org/strategies/retry.html#defaults for retry defaults
+                   builder.AddRetry(new HttpRetryStrategyOptions
+                   {
+                       MaxRetryAttempts = 4,
+                       Delay = TimeSpan.FromSeconds(2),
+                       BackoffType = DelayBackoffType.Exponential
+
+                   });
+                   builder.AddTimeout(TimeSpan.FromSeconds(1));
+               });
+
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddAutoMapper(typeof(OrderProfileMapping).Assembly);
-            var app = builder.Build();                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+            var app = builder.Build();
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())

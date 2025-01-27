@@ -46,7 +46,7 @@ namespace ProductsApi
             builder.Services.AddApiVersioning(o =>
             {
                 o.AssumeDefaultVersionWhenUnspecified = true;
-                o.DefaultApiVersion = new Asp.Versioning.ApiVersion(2, 0);
+                o.DefaultApiVersion = new Asp.Versioning.ApiVersion(1, 0);
                 //   o.DefaultApiVersion = new ApiVersion(1, 0);
                 o.ReportApiVersions = true;
                 //  o.ApiVersionReader = new MediaTypeApiVersionReader();

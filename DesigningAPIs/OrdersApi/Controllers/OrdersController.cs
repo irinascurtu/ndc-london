@@ -39,5 +39,17 @@ namespace OrdersApi.Controllers
 
             return CreatedAtAction("GetOrder", new { id = createdOrder.Id }, createdOrder);
         }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Order>> GetOrder(int id)
+        {
+            var order = await _orderService.GetOrderAsync(id);
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(order);
+        }
     }
 }

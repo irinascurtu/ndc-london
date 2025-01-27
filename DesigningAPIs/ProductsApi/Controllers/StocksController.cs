@@ -19,9 +19,18 @@ namespace ProductsApi.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [HttpGet]
-        [EnableRateLimiting("fixed")]
+        //[EnableRateLimiting("fixed")]
         public async Task<IActionResult> GetProductsStocks([FromQuery] List<int> productIds)
         {
+            // Create a Random object
+            Random random = new Random();
+            // Generate a random number between 0 and 100
+            int number = random.Next(0, 101);
+            if (number % 2 == 0)
+            {
+                throw new Exception("BOOM! A failure occurred");
+            }
+
             var products = await productService.GetProductStocksAsync(productIds);
             return Ok(products);
             ///TODO: add mappings and use the Model
