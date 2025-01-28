@@ -62,7 +62,7 @@ namespace OrdersApi.Controllers
                     //  context.TimeToLive = TimeSpan.FromSeconds(10);
                     context.Headers.Set("My-custom-headers", "Value");
                     // context.Headers.Set("TimeToLive", "100");
-                    context.TimeToLive = TimeSpan.FromSeconds(10);
+                  //  context.TimeToLive = TimeSpan.FromSeconds(10);
                 });
             //  await sendEndpoint.Send(model);
 

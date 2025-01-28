@@ -26,6 +26,7 @@ namespace OrderCreation
 
         public async Task Consume(ConsumeContext<OrderModel> context)
         {
+            throw new ArgumentNullException();
             //save the product in the database
             // access domain
             //Repository
