@@ -33,12 +33,18 @@ namespace OrderCreation
             Console.WriteLine($"I got a command to create an order:{context.Message}");
             //mapping from Message to an order object
             var orderToAdd = mapper.Map<Order>(context.Message);
-            
+
             /// Implement the logic to create an order
             var savedOrder = await orderService.AddOrderAsync(orderToAdd);
             /// send a notification to Admin
-            ///  Update customer            
 
+            var notifyOrderCreated = context.Publish(new OrderCreated()
+            {
+                CreatedAt = savedOrder.OrderDate,
+                OrderId = savedOrder.Id
+            });
+
+          
             await Task.CompletedTask;
         }
     }

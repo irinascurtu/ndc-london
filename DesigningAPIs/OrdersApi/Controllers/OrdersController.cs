@@ -55,7 +55,16 @@ namespace OrdersApi.Controllers
             //    OrderId = createdOrder.Id
             //});
             var sendEndpoint = await sendEndpointProvider.GetSendEndpoint(new Uri("queue:create-order-command"));
-            await sendEndpoint.Send(model);
+
+            await sendEndpoint.Send(model,
+                context =>
+                {
+                    //  context.TimeToLive = TimeSpan.FromSeconds(10);
+                    context.Headers.Set("My-custom-headers", "Value");
+                    // context.Headers.Set("TimeToLive", "100");
+                    context.TimeToLive = TimeSpan.FromSeconds(10);
+                });
+            //  await sendEndpoint.Send(model);
 
             return CreatedAtAction("GetOrder", new { id = createdOrder.Id }, createdOrder);
         }
