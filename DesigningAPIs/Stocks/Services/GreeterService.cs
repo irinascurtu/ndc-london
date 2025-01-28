@@ -24,6 +24,7 @@ namespace Stocks.Services
 
         public override Task<ProductStockList> GetStock(StockRequest request, ServerCallContext context)
         {
+
             var productIds = request.ProductId.ToList();
             var stocks = productStockRepository.GetProductStocksAsync(request.ProductId.ToList()).Result;
 

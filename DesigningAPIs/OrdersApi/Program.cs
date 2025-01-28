@@ -43,6 +43,11 @@ namespace OrdersApi
                    builder.AddTimeout(TimeSpan.FromSeconds(1));
                });
 
+            builder.Services.AddGrpcClient<Stocks.Greeter.GreeterClient>(o =>
+            {
+                o.Address = new Uri("https://localhost:7176");
+            });
+
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
