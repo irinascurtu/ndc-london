@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using OrdersApi.Infrastructure.Mappings;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace OrderCreation
 {
@@ -43,7 +44,7 @@ namespace OrderCreation
                         {
                             cfg.ReceiveEndpoint("create-order-command", e =>
                             {
-                               //e.ConfigureConsumer<CreateOrderConsumer>(context);
+                                e.ConfigureConsumer<CreateOrderConsumer>(context);
                             });
                             cfg.ConfigureEndpoints(context);
                         });
