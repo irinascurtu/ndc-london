@@ -1,9 +1,8 @@
 ﻿using AutoMapper;
-using Azure.Core;
-using Grpc.Core;
-using Microsoft.AspNetCore.Http;
+using Contracts.Events;
+using MassTransit;
 using Microsoft.AspNetCore.Mvc;
-using OrdersApi.Data.Domain;
+using Orders.Domain.Entities;
 using OrdersApi.Models;
 using OrdersApi.Service.Clients;
 using OrdersApi.Services;
@@ -19,44 +18,34 @@ namespace OrdersApi.Controllers
         private readonly IProductStockServiceClient _productStockServiceClient;
         private readonly IMapper _mapper;
         private readonly Greeter.GreeterClient grpcClient;
+        private readonly IPublishEndpoint publishEndpoint;
 
         public OrdersController(IOrderService orderService,
             IProductStockServiceClient productStockServiceClient,
             IMapper mapper,
-            Stocks.Greeter.GreeterClient grpcClient
+            Stocks.Greeter.GreeterClient grpcClient,
+            IPublishEndpoint publishEndpoint
             )
         {
             _orderService = orderService;
             _productStockServiceClient = productStockServiceClient;
             _mapper = mapper;
             this.grpcClient = grpcClient;
+            this.publishEndpoint = publishEndpoint;
         }
 
         [HttpPost]
         public async Task<ActionResult<Order>> PostOrder(OrderModel model)
         {
-            // classical http client
-            var stocks = await _productStockServiceClient.GetStock(
-                model.OrderItems.Select(p => p.ProductId).ToList());
 
-            // grpc client
-            //try
-            //{
-
-            //}
-            //catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled)
-            //{
-            //    Console.WriteLine("Stream cancelled.");
-            //}
-
-            var stockRequest = new StockRequest();
-            stockRequest.ProductId.AddRange(model.OrderItems.Select(p => p.ProductId));
-            var request = grpcClient.GetStock(stockRequest);
-
-            //To do: Verify stock 
             var orderToAdd = _mapper.Map<Order>(model);
             var createdOrder = await _orderService.AddOrderAsync(orderToAdd);
- 
+
+            var notifyOrderCreated = publishEndpoint.Publish(new OrderCreated()
+            {
+                CreatedAt = createdOrder.OrderDate,
+                OrderId = createdOrder.Id
+            });
 
             return CreatedAtAction("GetOrder", new { id = createdOrder.Id }, createdOrder);
         }

@@ -1,4 +1,5 @@
-﻿using OrdersApi.Data.Domain;
+﻿
+using Orders.Domain.Entities;
 
 namespace OrdersApi.Models
 {

@@ -1,8 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using OrdersApi.Data.Domain;
-using System.Collections.Generic;
+﻿using Microsoft.EntityFrameworkCore;
+using Orders.Domain.Entities;
 
 namespace OrdersApi.Data
 {

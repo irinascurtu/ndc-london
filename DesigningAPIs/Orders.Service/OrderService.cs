@@ -1,4 +1,4 @@
-﻿using OrdersApi.Data.Domain;
+﻿using Orders.Domain.Entities;
 using OrdersApi.Data.Repositories;
 using OrdersApi.Services;
 

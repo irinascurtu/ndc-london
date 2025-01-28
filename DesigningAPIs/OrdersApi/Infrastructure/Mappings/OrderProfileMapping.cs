@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
-using OrdersApi.Data.Domain;
+using Orders.Domain.Entities;
 using OrdersApi.Models;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+
 
 namespace OrdersApi.Infrastructure.Mappings
 {

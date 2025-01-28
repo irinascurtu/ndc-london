@@ -1,6 +1,8 @@
 
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Http.Resilience;
+using OrdersApi.Consumers;
 using OrdersApi.Data;
 using OrdersApi.Data.Repositories;
 using OrdersApi.Infrastructure.Mappings;
@@ -28,6 +30,24 @@ namespace OrdersApi
             builder.Services.AddScoped<IOrderRepository, OrderRepository>();
             builder.Services.AddScoped<IOrderService, OrderService>();
             //builder.Services.AddHttpClient<IProductStockServiceClient, ProductStockServiceClient>();
+            builder.Services.AddMassTransit(x =>
+            {
+                x.SetKebabCaseEndpointNameFormatter();
+                //x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("dev", false));
+               // x.AddConsumer<OrderCreatedConsumer>();
+
+                // Step 2: Select a Transport
+                x.UsingRabbitMq((context, cfg) =>
+                {
+                    //cfg.ReceiveEndpoint("OrderCreated", e =>
+                    //{
+                    //    e.ConfigureConsumer<OrderCreatedConsumer>(context);
+                    //});
+                    // Step 3: Configure the Transport
+                    // default endpoints created.
+                    cfg.ConfigureEndpoints(context);
+                });
+            });
 
             builder.Services.AddHttpClient<IProductStockServiceClient, ProductStockServiceClient>()
                .AddResilienceHandler("my-pipeline", builder =>
