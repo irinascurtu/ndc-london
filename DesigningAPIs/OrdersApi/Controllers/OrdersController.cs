@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using Contracts.Events;
+using Contracts.Response;
 using MassTransit;
+using MassTransit.Initializers;
 using Microsoft.AspNetCore.Mvc;
 using Orders.Domain.Entities;
 using OrdersApi.Models;
@@ -19,12 +21,16 @@ namespace OrdersApi.Controllers
         private readonly IMapper _mapper;
         private readonly Greeter.GreeterClient grpcClient;
         private readonly IPublishEndpoint publishEndpoint;
+        private readonly IRequestClient<VerifyOrder> requestClient;
+        private readonly ISendEndpointProvider sendEndpointProvider;
 
         public OrdersController(IOrderService orderService,
             IProductStockServiceClient productStockServiceClient,
             IMapper mapper,
             Stocks.Greeter.GreeterClient grpcClient,
-            IPublishEndpoint publishEndpoint
+            IPublishEndpoint publishEndpoint,
+            IRequestClient<VerifyOrder> requestClient,
+             ISendEndpointProvider sendEndpointProvider
             )
         {
             _orderService = orderService;
@@ -32,6 +38,8 @@ namespace OrdersApi.Controllers
             _mapper = mapper;
             this.grpcClient = grpcClient;
             this.publishEndpoint = publishEndpoint;
+            this.requestClient = requestClient;
+            this.sendEndpointProvider = sendEndpointProvider;
         }
 
         [HttpPost]
@@ -41,11 +49,13 @@ namespace OrdersApi.Controllers
             var orderToAdd = _mapper.Map<Order>(model);
             var createdOrder = await _orderService.AddOrderAsync(orderToAdd);
 
-            var notifyOrderCreated = publishEndpoint.Publish(new OrderCreated()
-            {
-                CreatedAt = createdOrder.OrderDate,
-                OrderId = createdOrder.Id
-            });
+            //var notifyOrderCreated = publishEndpoint.Publish(new OrderCreated()
+            //{
+            //    CreatedAt = createdOrder.OrderDate,
+            //    OrderId = createdOrder.Id
+            //});
+            var sendEndpoint = await sendEndpointProvider.GetSendEndpoint(new Uri("queue:create-order-command"));
+            await sendEndpoint.Send(model);
 
             return CreatedAtAction("GetOrder", new { id = createdOrder.Id }, createdOrder);
         }
@@ -53,13 +63,37 @@ namespace OrdersApi.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Order>> GetOrder(int id)
         {
-            var order = await _orderService.GetOrderAsync(id);
-            if (order == null)
+            //var order = await _orderService.GetOrderAsync(id);
+            //if (order == null)
+            //{
+            //    return NotFound();
+            //}
+            // return Ok(order);
+            try
             {
-                return NotFound();
-            }
 
-            return Ok(order);
+
+                var response = await requestClient.GetResponse<OrderResult, OrderNotFoundResult>(
+                    new VerifyOrder()
+                    {
+                        Id = id
+                    });
+
+                if (response.Is(out Response<OrderResult> incomingMessage))
+                {
+                    return Ok(incomingMessage.Message);
+                }
+
+                if (response.Is(out Response<OrderNotFoundResult> notFound))
+                {
+                    return NotFound(notFound.Message);
+                }
+            }
+            catch (Exception EX)
+            {
+                return Accepted();
+            }
+            return BadRequest();
         }
     }
 }

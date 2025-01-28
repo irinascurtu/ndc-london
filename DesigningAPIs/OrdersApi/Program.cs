@@ -1,4 +1,5 @@
 
+using Contracts.Response;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Http.Resilience;
@@ -34,8 +35,9 @@ namespace OrdersApi
             {
                 x.SetKebabCaseEndpointNameFormatter();
                 //x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("dev", false));
-               // x.AddConsumer<OrderCreatedConsumer>();
-
+                // x.AddConsumer<OrderCreatedConsumer>();
+                x.AddConsumer<VerifyOrderConsumer>();
+                x.AddRequestClient<VerifyOrder>();
                 // Step 2: Select a Transport
                 x.UsingRabbitMq((context, cfg) =>
                 {
